@@ -1,8 +1,11 @@
 import peasy.*;
+import grafica.*;
 import controlP5.*;
 
 PeasyCam cam;
 ControlP5 cp5;
+GPlot alt_plot;
+Table thrust;
 
 float pitch, yaw, roll; // pitch, yaw, and roll in radians
 int sim_ms; // simulation millis
@@ -20,19 +23,22 @@ float prev_millis;
 // Constants:
 float mass = 1; //kg
 float gavity = -9.80665;
+float drop_alt = 3500;
+
+float current_thrust = 0;
 
 // UI VALS:
 boolean running = false;
 
 void setup() {
-  size(800, 600, P3D);
+  size(1250, 700, P3D);
   frameRate(50);
   smooth();
 
   // set initial position:
   pos_x = 500;
   pos_y = 500;
-  pos_z = 1000;
+  pos_z = drop_alt;
   prev_pos_z = 1000;
 
   cam = new PeasyCam(this, 500, 500, 1000, 100);
@@ -41,47 +47,49 @@ void setup() {
 
   cp5 = new ControlP5(this);
   cp5.addToggle("running")
-    .setPosition(10, 10)
+    .setPosition(10, 50)
     .setSize(60, 20)
     .setValue(true)
     .setMode(ControlP5.SWITCH)
     ;
+  cp5.addButton("reset")
+    .setValue(0)
+    .setPosition(100, 50)
+    .setSize(60, 20)
+    ;
+    
+    cp5.addButton("simulate")
+    .setValue(0)
+    .setPosition(10, 650)
+    .setSize(180, 20)
+    ;
   cp5.setAutoDraw(false);
+
+  thrust = loadTable("F15.csv", "header");
+  
+  alt_plot = new GPlot(this);
+  alt_plot.setPos(900,50);
+  alt_plot.setTitleText("Altitude");
+  alt_plot.getXAxis().setAxisLabelText("Time");
+  alt_plot.getYAxis().setAxisLabelText("Altitude");
+  alt_plot.setOuterDim(350, 350);
 }
 
 void draw() {
   background(0);
-  stroke(255, 0, 0);
-  fill(255, 0, 0);
-  line(0, 0, 0, 100, 0, 0);
-  text("X", 100, 0, 0);
-
-  stroke(0, 255, 0);
-  fill(0, 255, 0);
-  line(0, 0, 0, 0, 100, 0);
-  text("Y", 0, 100, 0);
-
-  stroke(0, 0, 255);
-  fill(0, 0, 255);
-  line(0, 0, 0, 0, 0, 100);
-  text("Z", 0, 0, 100);
-
-  fill(100, 100, 100, 50);
-  stroke(255);
-  rect(0, 0, 1000, 1000);
-  for (int i = 0; i <= 10; i++) {
-    line(0, i*100, 1000, i*100);
-    line(i*100, 0, i*100, 1000);
-  }
+  drawLandscape();
 
   if (!running) {
     // reset all forces:
+    current_thrust = calcThrust(sim_ms - 1540);
     forces_z = 0;
     forces_z += (mass * gavity);
+    forces_z += current_thrust;
 
     // stop it if it hits the ground
-    if (pos_z <= 0) {
+    if (pos_z <= 45.75) {
       float count_force = ((vel_z * mass) + (mass * gavity)) * -1;
+      forces_z = count_force;
     }
 
     accel_z = forces_z / mass;
@@ -92,77 +100,58 @@ void draw() {
     prev_accel_z = accel_z;
     prev_vel_z = vel_z;
     prev_pos_z = pos_z;
-    
+
     prev_millis = sim_ms;
     sim_ms += 20;
   }
-  
-  println(pos_z);
-  drawRocket(pos_x, pos_y, pos_z, 0, 0, 0, true);
+  if (current_thrust > 0) {
+    drawRocket(pos_x, pos_y, pos_z, 0, 0, 0, true);
+  } else {
+    drawRocket(pos_x, pos_y, pos_z, 0, 0, 0, false);
+  }
 
   cam.beginHUD();
   fill(100, 100, 100, 100);
   stroke(255);
-  rect(0, 0, 100, 600);
+  rect(0, 0, 200, 700);
+  rect(900, 0, 350, 700);
+  fill(255);
+  textSize(20);
+  text("CONTROL PANNEL", 10, 40);
   cp5.draw();
+  alt_plot.defaultDraw();
   cam.endHUD();
 }
 
-void drawRocket(float x_func, float y_func, float z_func, float pitch_func, float yaw_func, float roll_func, boolean firing) {
-  pushMatrix();
-  translate(x_func, y_func, z_func - 45.75);
-  stroke(0, 253, 255);
-  rotateX((PI/2) + pitch_func);
-  rotateY(yaw_func);
-  drawCylinder(7.4, 7.4, 91.5, 20);
-  popMatrix();
-
-  if (firing) {
-    pushMatrix();
-    translate(x_func, y_func, z_func - 45.75);
-    stroke(255, 165, 0);
-    rotateX(-(PI/2));
-    drawCylinder(1, 10, 40, 6);
-    popMatrix();
+public void controlEvent(ControlEvent theEvent) {
+  println(theEvent.getController().getName());
+  if (theEvent.getController().getName().equals("reset")) {
+    reset();
   }
 }
 
-void drawCylinder(float topRadius, float bottomRadius, float tall, int sides) {
-  float angle = 0;
-  float angleIncrement = TWO_PI / sides;
-  beginShape(QUAD_STRIP);
-  for (int i = 0; i < sides + 1; ++i) {
-    vertex(topRadius*cos(angle), 0, topRadius*sin(angle));
-    vertex(bottomRadius*cos(angle), tall, bottomRadius*sin(angle));
-    angle += angleIncrement;
-  }
-  endShape();
+void reset() {
+  forces_x = 0;
+  forces_y = 0;
+  forces_z = 0;
 
-  // If it is not a cone, draw the circular top cap
-  if (topRadius != 0) {
-    angle = 0;
-    beginShape(TRIANGLE_FAN);
+  accel_x = 0;
+  accel_y = 0;
+  accel_z = 0;
 
-    // Center point
-    vertex(0, 0, 0);
-    for (int i = 0; i < sides + 1; i++) {
-      vertex(topRadius * cos(angle), 0, topRadius * sin(angle));
-      angle += angleIncrement;
-    }
-    endShape();
-  }
+  vel_x = 0;
+  vel_y = 0;
+  vel_z = 0;
 
-  // If it is not a cone, draw the circular bottom cap
-  if (bottomRadius != 0) {
-    angle = 0;
-    beginShape(TRIANGLE_FAN);
+  pos_x = 500;
+  pos_y = 500;
+  pos_z = drop_alt;
 
-    // Center point
-    vertex(0, tall, 0);
-    for (int i = 0; i < sides + 1; i++) {
-      vertex(bottomRadius * cos(angle), tall, bottomRadius * sin(angle));
-      angle += angleIncrement;
-    }
-    endShape();
-  }
+  prev_accel_z = 0;
+  prev_vel_z = 0;
+  prev_pos_z = drop_alt;
+  prev_millis = 0;
+  sim_ms = 0;
+
+  running = true;
 }
