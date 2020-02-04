@@ -36,14 +36,13 @@ int start_display_sim_ms = 0;
 
 void setup() {
   size(1250, 700, P3D);
-  frameRate(50);
   smooth();
 
   // set initial position:
   pos_x = 500;
   pos_y = 500;
   pos_z = drop_alt;
-  prev_pos_z = 1000;
+  prev_pos_z = drop_alt;
 
   cam = new PeasyCam(this, 500, 500, 1000, 100);
   cam.setMinimumDistance(50);
@@ -99,14 +98,6 @@ void setup() {
   flight.addColumn("pos_z");
   flight.addColumn("vel_z");
   flight.addColumn("accel_z");
-
-  /*
-  alt_plot = new GPlot(this);
-   alt_plot.setPos(900,50);
-   alt_plot.setTitleText("Altitude");
-   alt_plot.getXAxis().setAxisLabelText("Time");
-   alt_plot.getYAxis().setAxisLabelText("Altitude");
-   alt_plot.setOuterDim(350, 350);*/
 }
 
 void draw() {
@@ -135,10 +126,10 @@ void draw() {
   cp5.draw();
 
   if (sim_ready) {
-    stroke(255);
+    stroke(20, 255, 20);
     fill(20, 255, 20);
   } else {
-    stroke(255);
+    stroke(255, 20, 20);
     fill(255, 20, 20);
   }
   rect(10, 610, 180, 30);
