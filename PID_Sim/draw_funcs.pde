@@ -16,25 +16,44 @@ void drawLandscape() {
 
   fill(100, 100, 100, 50);
   stroke(255);
-  rect(0, 0, 1000, 1000);
-  for (int i = 0; i <= 10; i++) {
-    line(0, i*100, 1000, i*100);
-    line(i*100, 0, i*100, 1000);
+  rect(-500, -500, 1000, 1000);
+  for (int i = -5; i <= 5; i++) {
+    line(-500, i*100, 500, i*100);
+    line(i*100, -500, i*100, 500);
   }
 }
 
-void drawRocket(float x_func, float y_func, float z_func, float pitch_func, float yaw_func, float roll_func, boolean firing) {
+float vehicle_height = 92;
+
+void drawRocket(float x_func, float y_func, float z_func, float pitch_func, float yaw_func, float roll_func, float x_TVC, float y_TVC, boolean firing) {
   pushMatrix();
-  translate(x_func, y_func, z_func - 45.75);
+  translate(x_func, y_func, z_func);
   stroke(0, 253, 255);
   rotateX((PI/2) + pitch_func);
   rotateY(yaw_func);
-  drawCylinder(7.4, 7.4, 91.5, 20);
+  drawCylinder(4, 4, vehicle_height, 20);
+
+  popMatrix();
+
+  pushMatrix();
+  translate(x_func, y_func, z_func);
+  rotateX(pitch_func);
+  rotateY(yaw_func);
+  beginShape(TRIANGLES);
+  vertex(0, 0, 70); //X,Y,Z
+  vertex(-9, 0, vehicle_height); 
+  vertex(9, 0, vehicle_height);
+  vertex(0, 0, 70); //X,Y,Z
+  vertex(0, -9, vehicle_height); 
+  vertex(0, 9, vehicle_height);
+  endShape();
   popMatrix();
 
   if (firing) {
     pushMatrix();
-    translate(x_func, y_func, z_func - 45.75);
+    translate(x_func, y_func, z_func);
+    rotateX(x_TVC);
+    rotateY(y_TVC);
     stroke(255, 165, 0);
     rotateX(-(PI/2));
     drawCylinder(1, 10, 40, 6);
@@ -87,7 +106,7 @@ void drawHUD() {
   fill(100, 100, 100, 100);
   stroke(255);
   rect(0, 0, 200, 700);
-  rect(900, 0, 350, 700);
+  rect(width-200, 0, 200, 700);
   fill(255);
   textSize(20);
   text("CONTROL PANNEL", 10, 40);
@@ -102,6 +121,5 @@ void drawHUD() {
   }
   rect(10, 610, 180, 30);
 
-  //alt_plot.defaultDraw();
   cam.endHUD();
 }

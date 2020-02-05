@@ -1,35 +1,71 @@
-//pitch, yaw, and roll data:
-float[] torque = new float[3]; // TORQUE (N/m)
-float[] accel = new float[3]; // ACCEL (º/S^2)
-float[] vel = new float[3]; // VEL (º/S)
-float[] pos = new float[3]; // POSITION (rad)
 
-float[] torque_prev = new float[3]; // TORQUE (N/m)
-float[] accel_prev = new float[3]; // ACCEL (º/S^2)
-float[] vel_prev = new float[3]; // VEL (º/S)
-float[] pos_prev = new float[3]; // POSITION (rad)
 
-float error[] = new float[3];
-float i_prev[] = new float[3];
-float e_prev[] = new float[3];
-
-float p[] = new float[3];
-float i[] = new float[3];
-float d[] = new float[3];
-
-int sim_length = 5000; // simulate the first 5 seconds of flight
-int sim_ms_prev = 0; // previous loop's sim ms
-int sim_ms = 0; // simulation millis
+// Simulation params:
+int sim_length = 8000; // simulate the first 5 seconds of flight
 
 float max_TVC_angle = 0.0872665; // 5º deg in radians
+float[] TVC = new float[3]; // TVC ang_position (rad)
 
-float[] TVC = new float[3]; // TVC position (rad)
+float setpoint[] = {0.0, 0.0, 0.0};
+float gravity = -9.80665; // m/s^2
 
-String[] columns = {"ms", "0_torque", "0_accel", "0_vel", "0_pos", "0_output", "0_p", "0_i", "0_d", "1_torque", "1_accel", "1_vel", "1_pos", "1_output", "1_p", "1_i", "1_d"};
+String[] columns = {"ms", "current_thrust", 
+  "0_ang_torque", "0_ang_accel", "0_ang_vel", "0_ang_pos", "0_output", "0_p", "0_i", "0_d", 
+  "1_ang_torque", "1_ang_accel", "1_ang_vel", "1_ang_pos", "1_output", "1_p", "1_i", "1_d", 
+  "0_lin_force", "0_lin_accel", "0_lin_vel", "0_lin_pos", 
+  "1_lin_force", "1_lin_accel", "1_lin_vel", "1_lin_pos", 
+  "2_lin_force", "2_lin_accel", "2_lin_vel", "2_lin_pos",
+  "0_tvc", "1_tvc"
+};
 
-void runSim() {
+void runSim(float ign_alt, float drop_alt) {
+  //pitch, yaw, and roll data:
+  float[] ang_torque = new float[3]; // TORQUE (N/m)
+  float[] ang_accel = new float[3]; // ACCEL (º/S^2)
+  float[] ang_vel = new float[3]; // VEL (º/S)
+  float[] ang_pos = new float[3]; // POSITION (rad)
+
+  float[] ang_torque_prev = new float[3]; // TORQUE (N/m)
+  float[] ang_accel_prev = new float[3]; // ACCEL (º/S^2)
+  float[] ang_vel_prev = new float[3]; // VEL (º/S)
+  float[] ang_pos_prev = new float[3]; // POSITION (rad)
+
+  float[] ang_error = new float[3];
+  float[] ang_i_prev = new float[3];
+  float[] ang_e_prev = new float[3];
+
+  float[] ang_p = new float[3];
+  float[] ang_i = new float[3];
+  float[] ang_d = new float[3];
+
+  // Linear data:
+  float[] lin_force = new float[3]; // FORCE (N)
+  float[] lin_accel = new float[3]; // ACCEL (m/S^2)
+  float[] lin_vel = new float[3]; // VEL (m/S)
+  float[] lin_pos = new float[3]; // POSITION (m)
+
+  float[] lin_force_prev = new float[3]; // FORCE (N)
+  float[] lin_accel_prev = new float[3]; // ACCEL (m/S^2)
+  float[] lin_vel_prev = new float[3]; // VEL (m/S)
+  float[] lin_pos_prev = new float[3]; // POSITION (m)
+
+  int sim_ms_prev = 0; // previous loop's sim ms
+  int sim_ms = 0; // simulation millis
+
   int startMillis = millis(); // for analytical purposes
   int endMillis; // for analytical purposes
+
+  Boolean ignited = false;
+  int ignited_millis = 0;
+  float current_thrust = 0;
+
+  ang_pos[0] = 0.3;
+  ang_pos_prev[0] = 0.3;
+  ang_pos[1] = 0.0;
+  ang_pos_prev[1] = 0.0;
+
+  lin_pos[2] = drop_alt;
+  lin_pos_prev[2] = drop_alt;
 
   flight = new Table();
 
@@ -38,84 +74,156 @@ void runSim() {
   }
 
   while (sim_ms < sim_length) {
-    //current_thrust = calcThrust(sim_ms);
-    current_thrust = 15;
 
-    // calculate forces applied to body, and how much torque results
-    torque[0] = (sin(TVC[0]) * current_thrust) * TVC_to_CG;
-    torque[1] = (sin(TVC[1]) * current_thrust) * TVC_to_CG; 
-    accel[0] = torque[0] / moi;
-    accel[1] = torque[1] / moi;
+    // CALC THRUST:
+    if (lin_pos[2] < ign_alt && ignited == false) {
+      ignited = true;
+      ignited_millis = sim_ms;
+    }
+    if (lin_pos[2] < ign_alt) {
+      current_thrust = calcThrust(sim_ms - ignited_millis);
+    }
+    //current_thrust = 15;
 
-    // Integrate acceleration to find velocity:
-    vel[0] = vel_prev[0] + (float(sim_ms - sim_ms_prev) / 1000) * ((accel[0] + accel_prev[0])/2);
-    vel[1] = vel_prev[1] + (float(sim_ms - sim_ms_prev) / 1000) * ((accel[1] + accel_prev[1])/2);
+    // CALC ANGLE:
+    // calculate forces applied to body, and how much ang_torque results
+    ang_torque[0] = (sin(TVC[0]) * current_thrust) * TVC_to_CG;
+    ang_torque[1] = (sin(TVC[1]) * current_thrust) * TVC_to_CG; 
+    ang_accel[0] = ang_torque[0] / moi;
+    ang_accel[1] = ang_torque[1] / moi;
 
-    // Integrate velocity to find position:
-    pos[0] = pos_prev[0] + (float(sim_ms - sim_ms_prev) / 1000) * ((vel[0] + vel_prev[0])/2);
-    pos[1] = pos_prev[1] + (float(sim_ms - sim_ms_prev) / 1000) * ((vel[1] + vel_prev[1])/2);
+    // Integrate ang_acceleration to find ang_velocity:
+    ang_vel[0] = ang_vel_prev[0] + (float(sim_ms - sim_ms_prev) / 1000) * ((ang_accel[0] + ang_accel_prev[0])/2);
+    ang_vel[1] = ang_vel_prev[1] + (float(sim_ms - sim_ms_prev) / 1000) * ((ang_accel[1] + ang_accel_prev[1])/2);
 
-    // calculate dt and errors:
+    // Integrate ang_velocity to find ang_position:
+    ang_pos[0] = ang_pos_prev[0] + (float(sim_ms - sim_ms_prev) / 1000) * ((ang_vel[0] + ang_vel_prev[0])/2);
+    ang_pos[1] = ang_pos_prev[1] + (float(sim_ms - sim_ms_prev) / 1000) * ((ang_vel[1] + ang_vel_prev[1])/2);
+
+    // CALC TVC:
+    // calculate dt and ang_errors:
     int dt = sim_ms - sim_ms_prev;
-    error[0] = setpoint[0] - pos[0];
-    error[1] = setpoint[1] - pos[1];
+    ang_error[0] = setpoint[0] - ang_pos[0];
+    ang_error[1] = setpoint[1] - ang_pos[1];
 
     // Update P, I, and D values:
-    p[0] = error[0];
-    p[1] = error[1];
-    i[0] = i_prev[0] + (error[0] * (dt/1000.0));
-    i[1] = i_prev[1] + (error[1] * (dt/1000.0));
-    d[0] = (error[0] - e_prev[0]) / (dt/1000.0);
-    d[1] = (error[1] - e_prev[1]) / (dt/1000.0);
+    ang_p[0] = ang_error[0];
+    ang_p[1] = ang_error[1];
+    if (current_thrust > 0) {
+      ang_i[0] = ang_i_prev[0] + (ang_error[0] * (dt/1000.0));
+      ang_i[1] = ang_i_prev[1] + (ang_error[1] * (dt/1000.0));
+    }
+    ang_d[0] = (ang_error[0] - ang_e_prev[0]) / (dt/1000.0);
+    ang_d[1] = (ang_error[1] - ang_e_prev[1]) / (dt/1000.0);
 
-    if (dt == 0) { // this helps on the first found
-      d[0] = 0;
-      d[1] = 0;
+    if (dt == 0) { // this helps on the first round
+      ang_d[0] = 0;
+      ang_d[1] = 0;
     }
 
     // This, as they say, is where the magic happens:
-    float output[] = new float[2];
-    output[0] = constrain((p[0] * kp) + (i[0] * ki) + (d[0] * kd), -max_TVC_angle, max_TVC_angle);
-    output[1] = constrain((p[1] * kp) + (i[1] * ki) + (d[1] * kd), -max_TVC_angle, max_TVC_angle);
+    float[] output = new float[2];
+    output[0] = constrain((ang_p[0] * kp) + (ang_i[0] * ki) + (ang_d[0] * kd), -max_TVC_angle, max_TVC_angle);
+    output[1] = constrain((ang_p[1] * kp) + (ang_i[1] * ki) + (ang_d[1] * kd), -max_TVC_angle, max_TVC_angle);
 
     TVC[0] = output[0];
     TVC[1] = output[1];
 
+    // CALC LINEAR POS:
+    float[] thrust_vector = new float[2];
+    thrust_vector[0] = TVC[0] + ang_pos[0];
+    thrust_vector[1] = TVC[1] + ang_pos[1];
+    lin_force[0] = current_thrust * sin(thrust_vector[0]);
+    lin_force[1] = current_thrust * sin(thrust_vector[1]);
+    lin_force[2] = (((cos(thrust_vector[0]) + cos(thrust_vector[1]))/2) * current_thrust) + (mass * gravity); // so this really just isn't correct but it's the best I've got
+
+    lin_accel[0] = lin_force[0] / mass;
+    lin_accel[1] = lin_force[1] / mass;
+    lin_accel[2] = lin_force[2] / mass;
+
+    lin_vel[0] = lin_vel_prev[0] + (float(sim_ms - sim_ms_prev) / 1000) * ((lin_accel[0] + lin_accel_prev[0])/2);
+    lin_vel[1] = lin_vel_prev[1] + (float(sim_ms - sim_ms_prev) / 1000) * ((lin_accel[1] + lin_accel_prev[1])/2);
+    lin_vel[2] = lin_vel_prev[2] + (float(sim_ms - sim_ms_prev) / 1000) * ((lin_accel[2] + lin_accel_prev[2])/2);
+
+    lin_pos[0] = lin_pos_prev[0] + (float(sim_ms - sim_ms_prev) / 1000) * ((lin_vel[0] + lin_vel_prev[0])/2);
+    lin_pos[1] = lin_pos_prev[1] + (float(sim_ms - sim_ms_prev) / 1000) * ((lin_vel[1] + lin_vel_prev[1])/2);
+    lin_pos[2] = lin_pos_prev[2] + (float(sim_ms - sim_ms_prev) / 1000) * ((lin_vel[2] + lin_vel_prev[2])/2);
+
+    if (lin_pos[2] <= 0) {
+      lin_vel[0] = 0;
+      lin_vel[1] = 0;
+      lin_vel_prev[0] = 0;
+      lin_vel_prev[1] = 0;
+      ang_vel[0] = 0;
+      ang_vel[1] = 0;
+      ang_vel_prev[0] = 0;
+      ang_vel_prev[1] = 0;
+    }
+
     // Save to the table:
     TableRow newRow = flight.addRow();
     newRow.setInt("ms", sim_ms);
-    newRow.setFloat("0_torque", torque[0]);
-    newRow.setFloat("0_accel", accel[0]);
-    newRow.setFloat("0_vel", vel[0]);
-    newRow.setFloat("0_pos", pos[0]);
+    newRow.setFloat("current_thrust", current_thrust);
+    newRow.setFloat("0_ang_torque", ang_torque[0]);
+    newRow.setFloat("0_ang_accel", ang_accel[0]);
+    newRow.setFloat("0_ang_vel", ang_vel[0]);
+    newRow.setFloat("0_ang_pos", ang_pos[0]);
     newRow.setFloat("0_output", output[0]);
-    newRow.setFloat("0_p", p[0]);
-    newRow.setFloat("0_i", i[0]);
-    newRow.setFloat("0_d", d[0]);
-    newRow.setFloat("1_torque", torque[1]);
-    newRow.setFloat("1_accel", accel[1]);
-    newRow.setFloat("1_vel", vel[1]);
-    newRow.setFloat("1_pos", pos[1]);
+    newRow.setFloat("0_p", ang_p[0]);
+    newRow.setFloat("0_i", ang_i[0]);
+    newRow.setFloat("0_d", ang_d[0]);
+    newRow.setFloat("1_ang_torque", ang_torque[1]);
+    newRow.setFloat("1_ang_accel", ang_accel[1]);
+    newRow.setFloat("1_ang_vel", ang_vel[1]);
+    newRow.setFloat("1_ang_pos", ang_pos[1]);
     newRow.setFloat("1_output", output[1]);
-    newRow.setFloat("1_p", p[1]);
-    newRow.setFloat("1_i", i[1]);
-    newRow.setFloat("1_d", d[1]);
+    newRow.setFloat("1_p", ang_p[1]);
+    newRow.setFloat("1_i", ang_i[1]);
+    newRow.setFloat("1_d", ang_d[1]);
+    newRow.setFloat("0_lin_force", lin_force[0]);
+    newRow.setFloat("0_lin_accel", lin_accel[0]);
+    newRow.setFloat("0_lin_vel", lin_vel[0]);
+    newRow.setFloat("0_lin_pos", lin_pos[0]);
+    newRow.setFloat("1_lin_force", lin_force[1]);
+    newRow.setFloat("1_lin_accel", lin_accel[1]);
+    newRow.setFloat("1_lin_vel", lin_vel[1]);
+    newRow.setFloat("1_lin_pos", lin_pos[1]);
+    newRow.setFloat("2_lin_force", lin_force[2]);
+    newRow.setFloat("2_lin_accel", lin_accel[2]);
+    newRow.setFloat("2_lin_vel", lin_vel[2]);
+    newRow.setFloat("2_lin_pos", lin_pos[2]);
+    newRow.setFloat("0_tvc", TVC[0]);
+    newRow.setFloat("1_tvc", TVC[1]);
 
     // Update previous values:
-    torque_prev[0] = torque[0];
-    torque_prev[1] = torque[1];
-    accel_prev[0] = accel[0];
-    accel_prev[1] = accel[1];
-    vel_prev[0] = vel[0];
-    vel_prev[1] = vel[1];
-    pos_prev[0] = pos[0];
-    pos_prev[1] = pos[1];
+    ang_torque_prev[0] = ang_torque[0];
+    ang_torque_prev[1] = ang_torque[1];
+    ang_accel_prev[0] = ang_accel[0];
+    ang_accel_prev[1] = ang_accel[1];
+    ang_vel_prev[0] = ang_vel[0];
+    ang_vel_prev[1] = ang_vel[1];
+    ang_pos_prev[0] = ang_pos[0];
+    ang_pos_prev[1] = ang_pos[1];
+
+    lin_force_prev[0] = lin_force[0];
+    lin_force_prev[1] = lin_force[1];
+    lin_force_prev[2] = lin_force[2];
+    lin_accel_prev[0] = lin_accel[0];
+    lin_accel_prev[1] = lin_accel[1];
+    lin_accel_prev[2] = lin_accel[2];
+    lin_vel_prev[0] = lin_vel[0];
+    lin_vel_prev[1] = lin_vel[1];
+    lin_vel_prev[2] = lin_vel[2];
+    lin_pos_prev[0] = lin_pos[0];
+    lin_pos_prev[1] = lin_pos[1];
+    lin_pos_prev[2] = lin_pos[2];
+
     sim_ms_prev = sim_ms;
 
-    i_prev[0] = i[0];
-    i_prev[1] = i[1];
-    e_prev[0] = error[0];
-    e_prev[1] = error[1];
+    ang_i_prev[0] = ang_i[0];
+    ang_i_prev[1] = ang_i[1];
+    ang_e_prev[0] = ang_error[0];
+    ang_e_prev[1] = ang_error[1];
 
     sim_ms += 1;
   }

@@ -1,3 +1,5 @@
+Table thrust;
+
 float calcThrust(int millis) {
   float[] times = {};
   float[] thrusts = {};
