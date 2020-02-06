@@ -49,6 +49,8 @@ void optRunSim(float alt, float vel, int opt_coef) {
   lin_pos_prev[2] = alt;
   ign_alt = alt;
   Boolean impacted = false;
+  
+  int cutoff = 2000;
 
   while (sim_ms < opt_sim_length) {
     // CALC THRUST:
@@ -57,6 +59,12 @@ void optRunSim(float alt, float vel, int opt_coef) {
       ignited = true;
       ignited_millis = sim_ms;
     }
+    if(sim_ms < cutoff){
+      opt_coef = opt_coef;
+    }else{
+      opt_coef = 100;
+    }
+    
     if(ignited){
       current_thrust = calcThrust(sim_ms - ignited_millis) * (opt_coef / 100.0);
     }

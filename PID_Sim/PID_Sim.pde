@@ -167,32 +167,75 @@ void setup() {
     public void controlEvent(CallbackEvent event) {
       if (event.getAction() == ControlP5.ACTION_RELEASED) {
         println("gen opt pth");
+
+        /*
+        Table opt_dat = new Table();
+         opt_dat.addColumn("index");
+         int v_min = -40; //-40
+         int v_max = 0; //0
+         int a_min = 0; //0
+         int a_max = 90; //90
+         int num_checks = (v_max-v_min)*(a_max-a_min);
+         
+         for (int v = v_max; v>= v_min; v--) {
+         opt_dat.addColumn(str(v));
+         }
+         int itterator = 0;
+         
+         for (int a = a_max; a >= a_min; a--) {
+         TableRow newRow = opt_dat.addRow();
+         newRow.setFloat("index", a);
+         for (int v = v_max; v >= v_min; v--) {
+         optRunSim(a, v, 100);
+         newRow.setFloat(str(v), impact_vel);
+         itterator++;
+         println(itterator/float(num_checks)*100 + "% complete.");
+         }
+         }
+         saveTable(opt_dat, "data/opt_flight.csv");
+         */
+
         Table opt_dat = new Table();
         opt_dat.addColumn("index");
-
-        int v_min = -40; //-25
-        int v_max = 0; //-10
-        int a_min = 0; //25
-        int a_max = 90; //35
-        int num_checks = (v_max-v_min)*(a_max-a_min);
+        Table opt_thr = new Table();
+        opt_thr.addColumn("index");
         
+        int v_min = -25; //-25
+        int v_max = -10; //-10
+        int a_min = 15; //15
+        int a_max = 50; //50
+        int num_checks = (v_max-v_min)*(a_max-a_min);
+
         for (int v = v_max; v>= v_min; v--) {
           opt_dat.addColumn(str(v));
+          opt_thr.addColumn(str(v));
         }
         int itterator = 0;
-        
+
         for (int a = a_max; a >= a_min; a--) {
           TableRow newRow = opt_dat.addRow();
+          TableRow newRowThr = opt_thr.addRow();
           newRow.setFloat("index", a);
+          newRowThr.setFloat("index", a);
+          
           for (int v = v_max; v >= v_min; v--) {
-            optRunSim(a, v, 100);
-            newRow.setFloat(str(v), impact_vel);
+            int optimal_throttle = 0;
+            float closest_vel_so_far = -999999.0;
+            for (int t = 100; t >= 70; t -= 1) {
+              optRunSim(a, v, t);
+              if(impact_vel > closest_vel_so_far){
+                closest_vel_so_far = impact_vel;
+                optimal_throttle = t;
+              }
+            }
+            newRow.setFloat(str(v), closest_vel_so_far);
+            newRowThr.setFloat(str(v), optimal_throttle);
             itterator++;
             println(itterator/float(num_checks)*100 + "% complete.");
           }
         }
-
-        saveTable(opt_dat, "data/opt_flight.csv");
+        saveTable(opt_dat, "data/opt_throttle_flight.csv");
+        saveTable(opt_thr, "data/opt_throttle_thrdat_flight.csv");
       }
     }
   }
