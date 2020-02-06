@@ -82,7 +82,8 @@ void runSim(float ign_alt, float drop_alt) {
       ignited = true;
       ignited_millis = sim_ms;
     }
-    if (lin_pos[2] < ign_alt) {
+    //if (lin_pos[2] < ign_alt) {
+    if(ignited){
       current_thrust = calcThrust(sim_ms - ignited_millis);
     }
     //current_thrust = 15;

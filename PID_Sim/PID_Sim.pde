@@ -119,13 +119,13 @@ void setup() {
           println(max_vel > 0.0);
           test_alt = test_alt - 0.2;
         }
-        
+
         float prev_accel = 0;
         for (int i = 500; i < flight.getRowCount(); i++) {
           //if (flight.getFloat(i, "2_lin_vel") >= getMaxValue(flight, "2_lin_vel")) {
-            //landed_millis = i;
+          //landed_millis = i;
           //}
-          if(prev_accel > -9.7 && flight.getFloat(i, "2_lin_accel") <= 9.7){
+          if (prev_accel > -9.7 && flight.getFloat(i, "2_lin_accel") <= 9.7) {
             landed_millis = i;
           }
           prev_accel = flight.getFloat(i, "2_lin_accel");
@@ -158,7 +158,7 @@ void setup() {
     .setFont(createFont("arial", 12))
     .setAutoClear(false)
     ;
-  
+
   cp5.addButton("Gen Opt Path")
     .setValue(0)
     .setPosition(10, 400)
@@ -167,16 +167,37 @@ void setup() {
     public void controlEvent(CallbackEvent event) {
       if (event.getAction() == ControlP5.ACTION_RELEASED) {
         println("gen opt pth");
-        for(int a = 40; a >= 20; a--){
-          for(int v = 0; v >= -30; v--){
-            optRunSim(a,v,100);
+        Table opt_dat = new Table();
+        opt_dat.addColumn("index");
+
+        int v_min = -40; //-25
+        int v_max = 0; //-10
+        int a_min = 0; //25
+        int a_max = 90; //35
+        int num_checks = (v_max-v_min)*(a_max-a_min);
+        
+        for (int v = v_max; v>= v_min; v--) {
+          opt_dat.addColumn(str(v));
+        }
+        int itterator = 0;
+        
+        for (int a = a_max; a >= a_min; a--) {
+          TableRow newRow = opt_dat.addRow();
+          newRow.setFloat("index", a);
+          for (int v = v_max; v >= v_min; v--) {
+            optRunSim(a, v, 100);
+            newRow.setFloat(str(v), impact_vel);
+            itterator++;
+            println(itterator/float(num_checks)*100 + "% complete.");
           }
         }
+
+        saveTable(opt_dat, "data/opt_flight.csv");
       }
     }
   }
   );
-  
+
   cp5.addButton("Update Values")
     .setValue(0)
     .setPosition(10, 530)
@@ -298,13 +319,13 @@ void reset() {
 
 /*
 int getMinValue(Table t, String colName) { // DO NOT USE till yeh fix this shit and make it a float
-  int minValue = Integer.MAX_VALUE;
-  for (TableRow row : t.rows()) {
-    int val = row.getInt(colName);
-    if (val < minValue) minValue = val;
-  }
-  return minValue;
-}*/
+ int minValue = Integer.MAX_VALUE;
+ for (TableRow row : t.rows()) {
+ int val = row.getInt(colName);
+ if (val < minValue) minValue = val;
+ }
+ return minValue;
+ }*/
 
 float getMaxValue(Table t, String colName) {
   float maxValue = -99999.0;

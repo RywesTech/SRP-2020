@@ -1,10 +1,12 @@
 float impact_vel;
+int opt_sim_length = 16000;
 
 void optRunSim(float alt, float vel, int opt_coef) {
   int startMillis = millis(); // for analytical purposes
   int endMillis; // for analytical purposes
 
   //pitch, yaw, and roll data:
+  
   float[] ang_torque = new float[3]; // TORQUE (N/m)
   float[] ang_accel = new float[3]; // ACCEL (º/S^2)
   float[] ang_vel = new float[3]; // VEL (º/S)
@@ -46,24 +48,16 @@ void optRunSim(float alt, float vel, int opt_coef) {
   lin_pos[2] = alt;
   lin_pos_prev[2] = alt;
   ign_alt = alt;
-
-  //flight = new Table();
-
   Boolean impacted = false;
-  
-  /*
-  for (String column : columns) {
-    flight.addColumn(column);
-  }*/
 
-  while (sim_ms < sim_length) {
+  while (sim_ms < opt_sim_length) {
     // CALC THRUST:
     
     if (lin_pos[2] <= ign_alt && ignited == false) {
       ignited = true;
       ignited_millis = sim_ms;
     }
-    if (lin_pos[2] <= ign_alt) {
+    if(ignited){
       current_thrust = calcThrust(sim_ms - ignited_millis) * (opt_coef / 100.0);
     }
 
@@ -135,50 +129,15 @@ void optRunSim(float alt, float vel, int opt_coef) {
 
     if (lin_pos[2] <= 0 && !impacted) {
       impacted = true;
-      impact_vel = lin_vel[2];
+      if(lin_accel[2] > 0 || sim_ms < 300){
+        impact_vel = -100;
+      }else{
+        impact_vel = lin_vel[2];
+      }
     }
 
-    // Save to the table:
-/*
-    TableRow newRow = flight.addRow();
-    newRow.setInt("ms", sim_ms);
-    newRow.setFloat("current_thrust", current_thrust);
-    newRow.setFloat("0_ang_torque", ang_torque[0]);
-    newRow.setFloat("0_ang_accel", ang_accel[0]);
-    newRow.setFloat("0_ang_vel", ang_vel[0]);
-    newRow.setFloat("0_ang_pos", ang_pos[0]);
-    newRow.setFloat("0_output", output[0]);
-    newRow.setFloat("0_p", ang_p[0]);
-    newRow.setFloat("0_i", ang_i[0]);
-    newRow.setFloat("0_d", ang_d[0]);
-    newRow.setFloat("1_ang_torque", ang_torque[1]);
-    newRow.setFloat("1_ang_accel", ang_accel[1]);
-    newRow.setFloat("1_ang_vel", ang_vel[1]);
-    newRow.setFloat("1_ang_pos", ang_pos[1]);
-    newRow.setFloat("1_output", output[1]);
-    newRow.setFloat("1_p", ang_p[1]);
-    newRow.setFloat("1_i", ang_i[1]);
-    newRow.setFloat("1_d", ang_d[1]);
-    newRow.setFloat("0_lin_force", lin_force[0]);
-    newRow.setFloat("0_lin_accel", lin_accel[0]);
-    newRow.setFloat("0_lin_vel", lin_vel[0]);
-    newRow.setFloat("0_lin_pos", lin_pos[0]);
-    newRow.setFloat("1_lin_force", lin_force[1]);
-    newRow.setFloat("1_lin_accel", lin_accel[1]);
-    newRow.setFloat("1_lin_vel", lin_vel[1]);
-    newRow.setFloat("1_lin_pos", lin_pos[1]);
-    newRow.setFloat("2_lin_force", lin_force[2]);
-    newRow.setFloat("2_lin_accel", lin_accel[2]);
-    newRow.setFloat("2_lin_vel", lin_vel[2]);
-    newRow.setFloat("2_lin_pos", lin_pos[2]);
-    newRow.setFloat("0_tvc", TVC[0]);
-    newRow.setFloat("1_tvc", TVC[1]);
-
-    speedy_vel = lin_vel[2];
-    speedy_alt = lin_pos[2];
-    speedy_max_vel = speedy_vel;
-    */
     // Update previous values:
+    
     ang_torque_prev[0] = ang_torque[0];
     ang_torque_prev[1] = ang_torque[1];
     ang_accel_prev[0] = ang_accel[0];
@@ -211,13 +170,11 @@ void optRunSim(float alt, float vel, int opt_coef) {
     sim_ms += 1;
   }
 
-  //saveTable(flight, "data/flight.csv");
-
   sim_ready = true;
 
   endMillis = millis();
   print("Sim time: ");
-  println(endMillis - startMillis);
-  
+  print(endMillis - startMillis);
+  print("ms. IV: ");
   println(impact_vel);
 }
