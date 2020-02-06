@@ -200,10 +200,10 @@ void setup() {
         Table opt_thr = new Table();
         opt_thr.addColumn("index");
         
-        int v_min = -25; //-25
-        int v_max = -10; //-10
-        int a_min = 15; //15
-        int a_max = 50; //50
+        int v_min = -50; //-25
+        int v_max = 0; //-10
+        int a_min = 0; //15
+        int a_max = 100; //50
         int num_checks = (v_max-v_min)*(a_max-a_min);
 
         for (int v = v_max; v>= v_min; v--) {
