@@ -13,6 +13,9 @@ boolean running = false;
 boolean sim_ready = false;
 int start_display_sim_ms = 0;
 
+float speedy_alt, speedy_vel, speedy_max_vel;
+Boolean speedy = false;
+
 void setup() {
   size(1250, 700, P3D);
   smooth();
@@ -107,24 +110,32 @@ void setup() {
         float test_drop_alt = 100;
         float test_alt = 87; // start from the drop altitude
         int landed_millis = 0;
-        while (max_vel > 0) {
+        while (max_vel > 0.0) {
           runSim(test_alt, test_drop_alt);
           max_vel = getMaxValue(flight, "2_lin_vel");
-          println(test_alt);
-          test_alt = test_alt - 0.01;
+          //max_vel = speedy_max_vel;
+          println("test alt: " + test_alt);
+          println(max_vel);
+          println(max_vel > 0.0);
+          test_alt = test_alt - 0.2;
         }
-
-        for (int i = 100; i < flight.getRowCount(); i++) {
-          if (flight.getFloat(i, "2_lin_vel") >= getMaxValue(flight, "2_lin_vel")) {
+        
+        float prev_accel = 0;
+        for (int i = 500; i < flight.getRowCount(); i++) {
+          //if (flight.getFloat(i, "2_lin_vel") >= getMaxValue(flight, "2_lin_vel")) {
+            //landed_millis = i;
+          //}
+          if(prev_accel > -9.7 && flight.getFloat(i, "2_lin_accel") <= 9.7){
             landed_millis = i;
           }
+          prev_accel = flight.getFloat(i, "2_lin_accel");
         }
 
         println("dropped: " + test_drop_alt);
         println("ignited: " + test_alt);
         println("landed: " + flight.getFloat(landed_millis, "2_lin_pos"));
-        drop_alt = test_drop_alt - flight.getFloat(landed_millis, "2_lin_pos");
-        ign_alt = test_alt - flight.getFloat(landed_millis, "2_lin_pos");
+        drop_alt = test_drop_alt - flight.getFloat(landed_millis, "2_lin_pos") + 0.5;
+        ign_alt = test_alt - flight.getFloat(landed_millis, "2_lin_pos") + 0.5;
         cp5.get(Textfield.class, "Drop Alt").setText(str(drop_alt));
         cp5.get(Textfield.class, "Ign Alt").setText(str(ign_alt));
       }
@@ -147,7 +158,25 @@ void setup() {
     .setFont(createFont("arial", 12))
     .setAutoClear(false)
     ;
-
+  
+  cp5.addButton("Gen Opt Path")
+    .setValue(0)
+    .setPosition(10, 400)
+    .setSize(180, 30)
+    .addCallback(new CallbackListener() {
+    public void controlEvent(CallbackEvent event) {
+      if (event.getAction() == ControlP5.ACTION_RELEASED) {
+        println("gen opt pth");
+        for(int a = 40; a >= 20; a--){
+          for(int v = 0; v >= -30; v--){
+            optRunSim(a,v,100);
+          }
+        }
+      }
+    }
+  }
+  );
+  
   cp5.addButton("Update Values")
     .setValue(0)
     .setPosition(10, 530)
@@ -267,19 +296,20 @@ void reset() {
   running = false;
 }
 
-int getMinValue(Table t, String colName) {
+/*
+int getMinValue(Table t, String colName) { // DO NOT USE till yeh fix this shit and make it a float
   int minValue = Integer.MAX_VALUE;
   for (TableRow row : t.rows()) {
     int val = row.getInt(colName);
     if (val < minValue) minValue = val;
   }
   return minValue;
-}
+}*/
 
-int getMaxValue(Table t, String colName) {
-  int maxValue = Integer.MIN_VALUE;
+float getMaxValue(Table t, String colName) {
+  float maxValue = -99999.0;
   for (TableRow row : t.rows()) {
-    int val = row.getInt(colName);
+    float val = row.getFloat(colName);
     if (val > maxValue) maxValue = val;
   }
   return maxValue;

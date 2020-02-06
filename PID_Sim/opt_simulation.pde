@@ -1,24 +1,9 @@
+float impact_vel;
 
+void optRunSim(float alt, float vel, int opt_coef) {
+  int startMillis = millis(); // for analytical purposes
+  int endMillis; // for analytical purposes
 
-// Simulation params:
-int sim_length = 8000; // simulate the first 5 seconds of flight
-
-float max_TVC_angle = 0.0872665; // 5º deg in radians
-float[] TVC = new float[3]; // TVC ang_position (rad)
-
-float setpoint[] = {0.0, 0.0, 0.0};
-float gravity = -9.80665; // m/s^2
-
-String[] columns = {"ms", "current_thrust", 
-  "0_ang_torque", "0_ang_accel", "0_ang_vel", "0_ang_pos", "0_output", "0_p", "0_i", "0_d", 
-  "1_ang_torque", "1_ang_accel", "1_ang_vel", "1_ang_pos", "1_output", "1_p", "1_i", "1_d", 
-  "0_lin_force", "0_lin_accel", "0_lin_vel", "0_lin_pos", 
-  "1_lin_force", "1_lin_accel", "1_lin_vel", "1_lin_pos", 
-  "2_lin_force", "2_lin_accel", "2_lin_vel", "2_lin_pos", 
-  "0_tvc", "1_tvc"
-};
-
-void runSim(float ign_alt, float drop_alt) {
   //pitch, yaw, and roll data:
   float[] ang_torque = new float[3]; // TORQUE (N/m)
   float[] ang_accel = new float[3]; // ACCEL (º/S^2)
@@ -52,41 +37,35 @@ void runSim(float ign_alt, float drop_alt) {
   int sim_ms_prev = 0; // previous loop's sim ms
   int sim_ms = 0; // simulation millis
 
-  int startMillis = millis(); // for analytical purposes
-  int endMillis; // for analytical purposes
-
   Boolean ignited = false;
   int ignited_millis = 0;
   float current_thrust = 0;
 
-  ang_pos[0] = 0.3;
-  ang_pos_prev[0] = 0.3;
-  ang_pos[1] = 0.0;
-  ang_pos_prev[1] = 0.0;
+  lin_vel[2] = vel;
+  lin_vel_prev[2] = vel;
+  lin_pos[2] = alt;
+  lin_pos_prev[2] = alt;
+  ign_alt = alt;
 
-  lin_pos[2] = drop_alt;
-  lin_pos_prev[2] = drop_alt;
+  //flight = new Table();
 
-  flight = new Table();
+  Boolean impacted = false;
   
-  speedy_max_vel = Integer.MIN_VALUE;
-
+  /*
   for (String column : columns) {
     flight.addColumn(column);
-  }
+  }*/
 
   while (sim_ms < sim_length) {
-
     // CALC THRUST:
-    if (lin_pos[2] < ign_alt && ignited == false) {
+    
+    if (lin_pos[2] <= ign_alt && ignited == false) {
       ignited = true;
       ignited_millis = sim_ms;
     }
-    if (lin_pos[2] < ign_alt) {
-      current_thrust = calcThrust(sim_ms - ignited_millis);
+    if (lin_pos[2] <= ign_alt) {
+      current_thrust = calcThrust(sim_ms - ignited_millis) * (opt_coef / 100.0);
     }
-    //current_thrust = 15;
-
 
     //setpoint[0] = 5*cos((sim_ms*PI)/125);
 
@@ -154,60 +133,51 @@ void runSim(float ign_alt, float drop_alt) {
     lin_pos[1] = lin_pos_prev[1] + (float(sim_ms - sim_ms_prev) / 1000) * ((lin_vel[1] + lin_vel_prev[1])/2);
     lin_pos[2] = lin_pos_prev[2] + (float(sim_ms - sim_ms_prev) / 1000) * ((lin_vel[2] + lin_vel_prev[2])/2);
 
-    if (lin_pos[2] <= 0) {
-      lin_vel[0] = 0;
-      lin_vel[1] = 0;
-      lin_vel_prev[0] = 0;
-      lin_vel_prev[1] = 0;
-      ang_vel[0] = 0;
-      ang_vel[1] = 0;
-      ang_vel_prev[0] = 0;
-      ang_vel_prev[1] = 0;
+    if (lin_pos[2] <= 0 && !impacted) {
+      impacted = true;
+      impact_vel = lin_vel[2];
     }
 
     // Save to the table:
-    if (!speedy) {
-      TableRow newRow = flight.addRow();
-      newRow.setInt("ms", sim_ms);
-      newRow.setFloat("current_thrust", current_thrust);
-      newRow.setFloat("0_ang_torque", ang_torque[0]);
-      newRow.setFloat("0_ang_accel", ang_accel[0]);
-      newRow.setFloat("0_ang_vel", ang_vel[0]);
-      newRow.setFloat("0_ang_pos", ang_pos[0]);
-      newRow.setFloat("0_output", output[0]);
-      newRow.setFloat("0_p", ang_p[0]);
-      newRow.setFloat("0_i", ang_i[0]);
-      newRow.setFloat("0_d", ang_d[0]);
-      newRow.setFloat("1_ang_torque", ang_torque[1]);
-      newRow.setFloat("1_ang_accel", ang_accel[1]);
-      newRow.setFloat("1_ang_vel", ang_vel[1]);
-      newRow.setFloat("1_ang_pos", ang_pos[1]);
-      newRow.setFloat("1_output", output[1]);
-      newRow.setFloat("1_p", ang_p[1]);
-      newRow.setFloat("1_i", ang_i[1]);
-      newRow.setFloat("1_d", ang_d[1]);
-      newRow.setFloat("0_lin_force", lin_force[0]);
-      newRow.setFloat("0_lin_accel", lin_accel[0]);
-      newRow.setFloat("0_lin_vel", lin_vel[0]);
-      newRow.setFloat("0_lin_pos", lin_pos[0]);
-      newRow.setFloat("1_lin_force", lin_force[1]);
-      newRow.setFloat("1_lin_accel", lin_accel[1]);
-      newRow.setFloat("1_lin_vel", lin_vel[1]);
-      newRow.setFloat("1_lin_pos", lin_pos[1]);
-      newRow.setFloat("2_lin_force", lin_force[2]);
-      newRow.setFloat("2_lin_accel", lin_accel[2]);
-      newRow.setFloat("2_lin_vel", lin_vel[2]);
-      newRow.setFloat("2_lin_pos", lin_pos[2]);
-      newRow.setFloat("0_tvc", TVC[0]);
-      newRow.setFloat("1_tvc", TVC[1]);
-    }
-    /*
+/*
+    TableRow newRow = flight.addRow();
+    newRow.setInt("ms", sim_ms);
+    newRow.setFloat("current_thrust", current_thrust);
+    newRow.setFloat("0_ang_torque", ang_torque[0]);
+    newRow.setFloat("0_ang_accel", ang_accel[0]);
+    newRow.setFloat("0_ang_vel", ang_vel[0]);
+    newRow.setFloat("0_ang_pos", ang_pos[0]);
+    newRow.setFloat("0_output", output[0]);
+    newRow.setFloat("0_p", ang_p[0]);
+    newRow.setFloat("0_i", ang_i[0]);
+    newRow.setFloat("0_d", ang_d[0]);
+    newRow.setFloat("1_ang_torque", ang_torque[1]);
+    newRow.setFloat("1_ang_accel", ang_accel[1]);
+    newRow.setFloat("1_ang_vel", ang_vel[1]);
+    newRow.setFloat("1_ang_pos", ang_pos[1]);
+    newRow.setFloat("1_output", output[1]);
+    newRow.setFloat("1_p", ang_p[1]);
+    newRow.setFloat("1_i", ang_i[1]);
+    newRow.setFloat("1_d", ang_d[1]);
+    newRow.setFloat("0_lin_force", lin_force[0]);
+    newRow.setFloat("0_lin_accel", lin_accel[0]);
+    newRow.setFloat("0_lin_vel", lin_vel[0]);
+    newRow.setFloat("0_lin_pos", lin_pos[0]);
+    newRow.setFloat("1_lin_force", lin_force[1]);
+    newRow.setFloat("1_lin_accel", lin_accel[1]);
+    newRow.setFloat("1_lin_vel", lin_vel[1]);
+    newRow.setFloat("1_lin_pos", lin_pos[1]);
+    newRow.setFloat("2_lin_force", lin_force[2]);
+    newRow.setFloat("2_lin_accel", lin_accel[2]);
+    newRow.setFloat("2_lin_vel", lin_vel[2]);
+    newRow.setFloat("2_lin_pos", lin_pos[2]);
+    newRow.setFloat("0_tvc", TVC[0]);
+    newRow.setFloat("1_tvc", TVC[1]);
+
     speedy_vel = lin_vel[2];
     speedy_alt = lin_pos[2];
-    if(speedy_vel > speedy_max_vel){
-      speedy_max_vel = speedy_vel;
-    }*/
-
+    speedy_max_vel = speedy_vel;
+    */
     // Update previous values:
     ang_torque_prev[0] = ang_torque[0];
     ang_torque_prev[1] = ang_torque[1];
@@ -241,13 +211,13 @@ void runSim(float ign_alt, float drop_alt) {
     sim_ms += 1;
   }
 
-  if (!speedy) {
-    saveTable(flight, "data/flight.csv");
-  }
+  //saveTable(flight, "data/flight.csv");
 
   sim_ready = true;
 
   endMillis = millis();
   print("Sim time: ");
   println(endMillis - startMillis);
+  
+  println(impact_vel);
 }
