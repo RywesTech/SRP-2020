@@ -219,9 +219,9 @@ void setup() {
           newRowThr.setFloat("index", a);
           
           for (int v = v_max; v >= v_min; v--) {
-            int optimal_throttle = 0;
+            float optimal_throttle = 0.0;
             float closest_vel_so_far = -999999.0;
-            for (int t = 100; t >= 70; t -= 1) {
+            for (float t = 100; t >= 99; t -= 0.25) { //70
               optRunSim(a, v, t);
               if(impact_vel > closest_vel_so_far){
                 closest_vel_so_far = impact_vel;
@@ -236,6 +236,7 @@ void setup() {
         }
         saveTable(opt_dat, "data/opt_throttle_flight.csv");
         saveTable(opt_thr, "data/opt_throttle_thrdat_flight.csv");
+        println("total millis: " + millis());
       }
     }
   }

@@ -1,7 +1,7 @@
 float impact_vel;
 int opt_sim_length = 16000;
 
-void optRunSim(float alt, float vel, int opt_coef) {
+void optRunSim(float alt, float vel, float opt_coef) {
   int startMillis = millis(); // for analytical purposes
   int endMillis; // for analytical purposes
 
@@ -62,7 +62,7 @@ void optRunSim(float alt, float vel, int opt_coef) {
     if(sim_ms < cutoff){
       opt_coef = opt_coef;
     }else{
-      opt_coef = 100;
+      opt_coef = 100.0;
     }
     
     if(ignited){
