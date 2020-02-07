@@ -223,7 +223,7 @@ void setup() {
           for (int v = v_max; v >= v_min; v--) {
             float optimal_throttle = 0.0;
             float closest_vel_so_far = -999999.0;
-            for (float t = 100; t >= 99; t -= 0.25) { //70
+            for (float t = 100; t >= 75; t -= 0.50) { //70
               optRunSim(a, v, t);
               if(impact_vel > closest_vel_so_far){
                 closest_vel_so_far = impact_vel;
