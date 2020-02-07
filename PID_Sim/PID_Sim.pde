@@ -19,6 +19,8 @@ Boolean speedy = false;
 void setup() {
   size(1250, 700, P3D);
   smooth();
+  
+  font = loadFont("Exo2-Regular-18.vlw");
 
   vehicle = loadTable("vehicle.csv", "header");
   int row = vehicle.getRowCount() - 1;
@@ -305,13 +307,42 @@ void draw() {
       if (z_func < 0) {
         z_func = 0;
       }
-      drawRocket(flight.getFloat(flight_ms, "1_lin_pos") * 100, flight.getFloat(flight_ms, "0_lin_pos") * 100, z_func, flight.getFloat(flight_ms, "0_ang_pos"), flight.getFloat(flight_ms, "1_ang_pos"), 0, flight.getFloat(flight_ms, "0_tvc"), flight.getFloat(flight_ms, "1_tvc"), (flight.getFloat(flight_ms, "current_thrust") > 0));
-      cam.lookAt(flight.getFloat(flight_ms, "1_lin_pos") * 100, flight.getFloat(flight_ms, "0_lin_pos") * 100, z_func, 50);
+      drawRocket(-flight.getFloat(flight_ms, "1_lin_pos") * 100, -flight.getFloat(flight_ms, "0_lin_pos") * 100, z_func, flight.getFloat(flight_ms, "0_ang_pos"), flight.getFloat(flight_ms, "1_ang_pos"), 0, flight.getFloat(flight_ms, "0_tvc"), flight.getFloat(flight_ms, "1_tvc"), (flight.getFloat(flight_ms, "current_thrust") > 0));
+      cam.lookAt(-flight.getFloat(flight_ms, "1_lin_pos") * 100, -flight.getFloat(flight_ms, "0_lin_pos") * 100, z_func, 50);
       delay(30);
       cam.beginHUD();
+      fill(255);
+      
+      textSize(16);
+      fill(100);
       stroke(255);
-      text("Alt: " + str(flight.getFloat(flight_ms, "2_lin_pos")), width-180, 20);
+      rect(width-190, 65, 180, 30);
+      fill(255);
+      textAlign(CENTER);
+      text("MODE: ", width - 100, 85);
+      textAlign(LEFT);
+      text("Z_pos: " + String.format("%.2f", z_func/100.0) + " m", width-185, 120);
+      text("Z_vel: " + String.format("%.2f", flight.getFloat(flight_ms, "2_lin_vel")) + " m/s", width-185, 140);
+      text("Z_accel: " + String.format("%.2f", flight.getFloat(flight_ms, "2_lin_accel")) + " m/s^2", width-185, 160);
+      
+      text("X_pos: " + String.format("%.2f", flight.getFloat(flight_ms, "1_lin_pos")) + " m", width-185, 190);
+      text("X_vel: " + String.format("%.2f", flight.getFloat(flight_ms, "1_lin_vel")) + " m/s", width-185, 210);
+      text("X_accel: " + String.format("%.2f", flight.getFloat(flight_ms, "1_lin_accel")) + " m/s^2", width-185, 230);
+      
+      text("Y_pos: " + String.format("%.2f", flight.getFloat(flight_ms, "0_lin_pos")) + " m", width-185, 260);
+      text("Y_vel: " + String.format("%.2f", flight.getFloat(flight_ms, "0_lin_vel")) + " m/s", width-185, 280);
+      text("Y_accel: " + String.format("%.2f", flight.getFloat(flight_ms, "0_lin_accel")) + " m/s^2", width-185, 300);
+      
+      text("Pitch: " + String.format("%.2f", flight.getFloat(flight_ms, "0_ang_pos")) + " rad", width-185, 330);
+      text("Yaw: " + String.format("%.2f", flight.getFloat(flight_ms, "1_ang_pos")) + "rad", width-185, 350);
+      text("Roll: " + String.format("%.2f", 0.0) + " rad", width-185, 370);
+      
+      text("Pitch offset: " + String.format("%.2f", -flight.getFloat(flight_ms, "0_ang_pos")) + " rad", width-185, 400);
+      text("Yaw offset: " + String.format("%.2f", -flight.getFloat(flight_ms, "1_ang_pos")) + "rad", width-185, 420);
+      text("Roll offset: " + String.format("%.2f", 0.0) + " rad", width-185, 440);
+      
       cam.endHUD();
+      
     }
   }
   drawHUD();

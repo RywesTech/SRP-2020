@@ -122,7 +122,7 @@ void optRunSim(float alt, float vel, float opt_coef) {
     lin_force[0] = current_thrust * sin(thrust_vector[0]);
     lin_force[1] = current_thrust * sin(thrust_vector[1]);
     lin_force[2] = (((cos(thrust_vector[0]) + cos(thrust_vector[1]))/2) * current_thrust) + (mass * gravity); // so this really just isn't correct but it's the best I've got
-
+    
     lin_accel[0] = lin_force[0] / mass;
     lin_accel[1] = lin_force[1] / mass;
     lin_accel[2] = lin_force[2] / mass;

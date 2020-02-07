@@ -101,6 +101,8 @@ void drawCylinder(float topRadius, float bottomRadius, float tall, int sides) {
   }
 }
 
+PFont font;
+
 void drawHUD() { 
   cam.beginHUD();
   fill(100, 100, 100, 100);
@@ -108,8 +110,9 @@ void drawHUD() {
   rect(0, 0, 200, 700);
   rect(width-200, 0, 200, 700);
   fill(255);
-  textSize(20);
-  text("CONTROL PANNEL", 10, 40);
+  textAlign(CENTER);
+  textFont(font,20);
+  text("CONTROL PANNEL", 100, 40);
   cp5.draw();
 
   if (sim_ready) {
@@ -120,6 +123,9 @@ void drawHUD() {
     fill(238, 82, 83);
   }
   rect(10, 610, 180, 30);
+  
+  fill(255);
+  text("OUTPUTS", width-100, 40);
 
   cam.endHUD();
 }
