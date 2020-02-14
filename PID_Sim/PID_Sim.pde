@@ -19,7 +19,7 @@ Boolean speedy = false;
 void setup() {
   size(1250, 700, P3D);
   smooth();
-  
+
   font = loadFont("Exo2-Regular-18.vlw");
 
   vehicle = loadTable("vehicle.csv", "header");
@@ -170,75 +170,76 @@ void setup() {
       if (event.getAction() == ControlP5.ACTION_RELEASED) {
         println("gen opt pth");
 
-        /*
-        Table opt_dat = new Table();
-         opt_dat.addColumn("index");
-         int v_min = -40; //-40
-         int v_max = 0; //0
-         int a_min = 0; //0
-         int a_max = 90; //90
-         int num_checks = (v_max-v_min)*(a_max-a_min);
-         
-         for (int v = v_max; v>= v_min; v--) {
-         opt_dat.addColumn(str(v));
-         }
-         int itterator = 0;
-         
-         for (int a = a_max; a >= a_min; a--) {
-         TableRow newRow = opt_dat.addRow();
-         newRow.setFloat("index", a);
-         for (int v = v_max; v >= v_min; v--) {
-         optRunSim(a, v, 100);
-         newRow.setFloat(str(v), impact_vel);
-         itterator++;
-         println(itterator/float(num_checks)*100 + "% complete.");
-         }
-         }
-         saveTable(opt_dat, "data/opt_flight.csv");
-         */
 
         Table opt_dat = new Table();
         opt_dat.addColumn("index");
-        Table opt_thr = new Table();
-        opt_thr.addColumn("index");
-        
-        int v_min = -50; //-25
-        int v_max = 0; //-10
-        int a_min = 0; //15
-        int a_max = 100; //50
+        int v_min = -50; //-40
+        int v_max = 0; //0
+        int a_min = 0; //0
+        int a_max = 100; //90
         int num_checks = (v_max-v_min)*(a_max-a_min);
 
         for (int v = v_max; v>= v_min; v--) {
           opt_dat.addColumn(str(v));
-          opt_thr.addColumn(str(v));
         }
         int itterator = 0;
 
         for (int a = a_max; a >= a_min; a--) {
           TableRow newRow = opt_dat.addRow();
-          TableRow newRowThr = opt_thr.addRow();
           newRow.setFloat("index", a);
-          newRowThr.setFloat("index", a);
-          
           for (int v = v_max; v >= v_min; v--) {
-            float optimal_throttle = 0.0;
-            float closest_vel_so_far = -999999.0;
-            for (float t = 100; t >= 75; t -= 0.50) { //70
-              optRunSim(a, v, t);
-              if(impact_vel > closest_vel_so_far){
-                closest_vel_so_far = impact_vel;
-                optimal_throttle = t;
-              }
-            }
-            newRow.setFloat(str(v), closest_vel_so_far);
-            newRowThr.setFloat(str(v), optimal_throttle);
+            optRunSim(a, v, 100);
+            newRow.setFloat(str(v), impact_vel);
             itterator++;
             println(itterator/float(num_checks)*100 + "% complete.");
           }
         }
-        saveTable(opt_dat, "data/opt_throttle_flight.csv");
-        saveTable(opt_thr, "data/opt_throttle_thrdat_flight.csv");
-        println("total millis: " + millis());
+        saveTable(opt_dat, "data/opt_flight.csv");
+
+        /*
+        Table opt_dat = new Table();
+         opt_dat.addColumn("index");
+         Table opt_thr = new Table();
+         opt_thr.addColumn("index");
+         
+         int v_min = -50; //-25
+         int v_max = 0; //-10
+         int a_min = 0; //15
+         int a_max = 100; //50
+         int num_checks = (v_max-v_min)*(a_max-a_min);
+         
+         for (int v = v_max; v>= v_min; v--) {
+         opt_dat.addColumn(str(v));
+         opt_thr.addColumn(str(v));
+         }
+         int itterator = 0;
+         
+         for (int a = a_max; a >= a_min; a--) {
+         TableRow newRow = opt_dat.addRow();
+         TableRow newRowThr = opt_thr.addRow();
+         newRow.setFloat("index", a);
+         newRowThr.setFloat("index", a);
+         
+         for (int v = v_max; v >= v_min; v--) {
+         float optimal_throttle = 0.0;
+         float closest_vel_so_far = -999999.0;
+         for (float t = 100; t >= 75; t -= 0.50) { //70
+         optRunSim(a, v, t);
+         if(impact_vel > closest_vel_so_far){
+         closest_vel_so_far = impact_vel;
+         optimal_throttle = t;
+         }
+         }
+         newRow.setFloat(str(v), closest_vel_so_far);
+         newRowThr.setFloat(str(v), optimal_throttle);
+         itterator++;
+         println(itterator/float(num_checks)*100 + "% complete.");
+         }
+         }
+         saveTable(opt_dat, "data/opt_throttle_flight.csv");
+         saveTable(opt_thr, "data/opt_throttle_thrdat_flight.csv");
+         println("total millis: " + millis());
+         */
       }
     }
   }
@@ -304,45 +305,48 @@ void draw() {
     println(flight_ms);
     if (flight_ms < sim_length) {
       float z_func = flight.getFloat(flight_ms, "2_lin_pos") * 100;
+      float z_func_vel = flight.getFloat(flight_ms, "2_lin_vel") * 100;
+      float z_func_accel = flight.getFloat(flight_ms, "2_lin_accel") * 100;
       if (z_func < 0) {
         z_func = 0;
+        z_func_vel = 0;
+        z_func_accel = 0;
       }
       drawRocket(-flight.getFloat(flight_ms, "1_lin_pos") * 100, -flight.getFloat(flight_ms, "0_lin_pos") * 100, z_func, flight.getFloat(flight_ms, "0_ang_pos"), flight.getFloat(flight_ms, "1_ang_pos"), 0, flight.getFloat(flight_ms, "0_tvc"), flight.getFloat(flight_ms, "1_tvc"), (flight.getFloat(flight_ms, "current_thrust") > 0));
       cam.lookAt(-flight.getFloat(flight_ms, "1_lin_pos") * 100, -flight.getFloat(flight_ms, "0_lin_pos") * 100, z_func, 50);
       delay(30);
       cam.beginHUD();
       fill(255);
-      
+
       textSize(16);
       fill(100);
       stroke(255);
       rect(width-190, 65, 180, 30);
       fill(255);
       textAlign(CENTER);
-      text("MODE: ", width - 100, 85);
+      text("MODE: FL", width - 100, 85);
       textAlign(LEFT);
       text("Z_pos: " + String.format("%.2f", z_func/100.0) + " m", width-185, 120);
-      text("Z_vel: " + String.format("%.2f", flight.getFloat(flight_ms, "2_lin_vel")) + " m/s", width-185, 140);
-      text("Z_accel: " + String.format("%.2f", flight.getFloat(flight_ms, "2_lin_accel")) + " m/s^2", width-185, 160);
-      
+      text("Z_vel: " + String.format("%.2f", z_func_vel/100.0) + " m/s", width-185, 140);
+      text("Z_accel: " + String.format("%.2f", z_func_accel/100.0) + " m/s^2", width-185, 160);
+
       text("X_pos: " + String.format("%.2f", flight.getFloat(flight_ms, "1_lin_pos")) + " m", width-185, 190);
       text("X_vel: " + String.format("%.2f", flight.getFloat(flight_ms, "1_lin_vel")) + " m/s", width-185, 210);
       text("X_accel: " + String.format("%.2f", flight.getFloat(flight_ms, "1_lin_accel")) + " m/s^2", width-185, 230);
-      
+
       text("Y_pos: " + String.format("%.2f", flight.getFloat(flight_ms, "0_lin_pos")) + " m", width-185, 260);
       text("Y_vel: " + String.format("%.2f", flight.getFloat(flight_ms, "0_lin_vel")) + " m/s", width-185, 280);
       text("Y_accel: " + String.format("%.2f", flight.getFloat(flight_ms, "0_lin_accel")) + " m/s^2", width-185, 300);
-      
+
       text("Pitch: " + String.format("%.2f", flight.getFloat(flight_ms, "0_ang_pos")) + " rad", width-185, 330);
       text("Yaw: " + String.format("%.2f", flight.getFloat(flight_ms, "1_ang_pos")) + "rad", width-185, 350);
       text("Roll: " + String.format("%.2f", 0.0) + " rad", width-185, 370);
-      
+
       text("Pitch offset: " + String.format("%.2f", -flight.getFloat(flight_ms, "0_ang_pos")) + " rad", width-185, 400);
       text("Yaw offset: " + String.format("%.2f", -flight.getFloat(flight_ms, "1_ang_pos")) + "rad", width-185, 420);
       text("Roll offset: " + String.format("%.2f", 0.0) + " rad", width-185, 440);
-      
+
       cam.endHUD();
-      
     }
   }
   drawHUD();

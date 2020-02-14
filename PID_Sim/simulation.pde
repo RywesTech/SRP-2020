@@ -58,11 +58,14 @@ void runSim(float ign_alt, float drop_alt) {
   Boolean ignited = false;
   int ignited_millis = 0;
   float current_thrust = 0;
-
-  ang_pos[0] = 0.3;
-  ang_pos_prev[0] = 0.3;
-  ang_pos[1] = 0.02;
-  ang_pos_prev[1] = 0.02;
+  
+  lin_pos[0] = -3.0; //0.3
+  lin_pos_prev[0] = -3.0;
+  
+  ang_pos[0] = 0.0; //0.3
+  ang_pos_prev[0] = 0.0;
+  ang_pos[1] = 0.0; //0.02
+  ang_pos_prev[1] = 0.0;
 
   lin_pos[2] = drop_alt;
   lin_pos_prev[2] = drop_alt;
@@ -87,6 +90,15 @@ void runSim(float ign_alt, float drop_alt) {
       current_thrust = calcThrust(sim_ms - ignited_millis);
     }
     //current_thrust = 15;
+    float throttle_percent = 0.89;
+    float angle = acos(throttle_percent);
+    if(sim_ms - ignited_millis > 100 && sim_ms - ignited_millis < 800){
+      setpoint[0] = angle;
+    } else if (sim_ms - ignited_millis > 800 && sim_ms - ignited_millis < 1500){
+      setpoint[0] = -angle;
+    } else {
+      setpoint[0] = 0;
+    }
 
 
     //setpoint[0] = 5*cos((sim_ms*PI)/125);

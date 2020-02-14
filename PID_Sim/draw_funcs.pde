@@ -112,7 +112,7 @@ void drawHUD() {
   fill(255);
   textAlign(CENTER);
   textFont(font,20);
-  text("CONTROL PANNEL", 100, 40);
+  text("CONTROL PANEL", 100, 40);
   cp5.draw();
 
   if (sim_ready) {
