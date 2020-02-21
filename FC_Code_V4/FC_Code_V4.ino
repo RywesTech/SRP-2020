@@ -23,7 +23,7 @@
  * 20: Buzzer
  * 21: LED
  * 22:
- * 23:`
+ * 23:
  */
 
 // Complies on 1.8.10 for Teensy 3.6

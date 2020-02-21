@@ -170,7 +170,7 @@ void setup() {
       if (event.getAction() == ControlP5.ACTION_RELEASED) {
         println("gen opt pth");
 
-
+        /*
         Table opt_dat = new Table();
         opt_dat.addColumn("index");
         int v_min = -50; //-40
@@ -188,14 +188,14 @@ void setup() {
           TableRow newRow = opt_dat.addRow();
           newRow.setFloat("index", a);
           for (int v = v_max; v >= v_min; v--) {
-            optRunSim(a, v, 100);
+            optRunSim(a, v, 93);
             newRow.setFloat(str(v), impact_vel);
             itterator++;
             println(itterator/float(num_checks)*100 + "% complete.");
           }
         }
         saveTable(opt_dat, "data/opt_flight.csv");
-
+        */
         /*
         Table opt_dat = new Table();
          opt_dat.addColumn("index");

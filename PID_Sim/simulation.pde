@@ -15,7 +15,7 @@ String[] columns = {"ms", "current_thrust",
   "0_lin_force", "0_lin_accel", "0_lin_vel", "0_lin_pos", 
   "1_lin_force", "1_lin_accel", "1_lin_vel", "1_lin_pos", 
   "2_lin_force", "2_lin_accel", "2_lin_vel", "2_lin_pos", 
-  "0_tvc", "1_tvc"
+  "0_tvc", "1_tvc","setpoint"
 };
 
 void runSim(float ign_alt, float drop_alt) {
@@ -59,8 +59,8 @@ void runSim(float ign_alt, float drop_alt) {
   int ignited_millis = 0;
   float current_thrust = 0;
   
-  lin_pos[0] = -3.0; //0.3
-  lin_pos_prev[0] = -3.0;
+  lin_pos[0] = 0.0; //0.3
+  lin_pos_prev[0] = 0.0;
   
   ang_pos[0] = 0.0; //0.3
   ang_pos_prev[0] = 0.0;
@@ -85,20 +85,28 @@ void runSim(float ign_alt, float drop_alt) {
       ignited = true;
       ignited_millis = sim_ms;
     }
-    //if (lin_pos[2] < ign_alt) {
+
     if(ignited){
-      current_thrust = calcThrust(sim_ms - ignited_millis);
+      current_thrust = calcThrust(sim_ms - ignited_millis); //93%
     }
     //current_thrust = 15;
+    
+    if(sim_ms > 500){
+      //setpoint[0] = 0.0872665; //0.349066
+    } else {
+      setpoint[0] = 0;
+    }
+    /*
     float throttle_percent = 0.89;
     float angle = acos(throttle_percent);
+
     if(sim_ms - ignited_millis > 100 && sim_ms - ignited_millis < 800){
       setpoint[0] = angle;
     } else if (sim_ms - ignited_millis > 800 && sim_ms - ignited_millis < 1500){
       setpoint[0] = -angle;
     } else {
       setpoint[0] = 0;
-    }
+    }*/
 
 
     //setpoint[0] = 5*cos((sim_ms*PI)/125);
@@ -214,6 +222,7 @@ void runSim(float ign_alt, float drop_alt) {
       newRow.setFloat("2_lin_pos", lin_pos[2]);
       newRow.setFloat("0_tvc", TVC[0]);
       newRow.setFloat("1_tvc", TVC[1]);
+      newRow.setFloat("setpoint", setpoint[0]);
     }
     /*
     speedy_vel = lin_vel[2];
