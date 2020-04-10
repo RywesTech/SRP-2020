@@ -1,53 +1,49 @@
-#include <SD.h>
-
-void logData() { // dataLogTemp --> permanent storage
-  String ds = ""; //ds = dataString
+void logData() {
+  String ds = "";
   ds += millis();
-  ds += ";";
+  ds += ",";
   ds += String(armed);
-  ds += ";";
+  ds += ",";
   ds += String(dropped);
-  ds += ";";
+  ds += ",";
   ds += String(fireing);
-  ds += ";";
-  ds += String(alt);
-  ds += ";";
-  ds += String(groundAlt);
-  ds += ";";
-  ds += String(alt - groundAlt);
-  ds += ";";
-  ds += String(pressure);
-  ds += ";";
-  ds += String(pitch);
-  ds += ";";
-  ds += String(yaw);
-  ds += ";";
-  ds += String(roll);
-  ds += ";";
+  ds += ",";
+  ds += String(s_alt);
+  ds += ",";
+  ds += String(s_altASL);
+  ds += ",";
+  ds += String(s_pressure);
+  ds += ",";
+  ds += String(s_pitch);
+  ds += ",";
+  ds += String(s_yaw);
+  ds += ",";
+  ds += String(s_roll);
+  ds += ",";
   ds += String(cal_s);
-  ds += ";";
+  ds += ",";
   ds += String(cal_g);
-  ds += ";";
+  ds += ",";
   ds += String(cal_a);
-  ds += ";";
+  ds += ",";
   ds += String(cal_m);
-  ds += ";";
+  ds += ",";
   ds += String(x_p);
-  ds += ";";
+  ds += ",";
   ds += String(x_i);
-  ds += ";";
+  ds += ",";
   ds += String(x_d);
-  ds += ";";
+  ds += ",";
   ds += String(x_pid);
-  ds += ";";
+  ds += ",";
   ds += String(y_p);
-  ds += ";";
+  ds += ",";
   ds += String(y_i);
-  ds += ";";
+  ds += ",";
   ds += String(y_d);
-  ds += ";";
+  ds += ",";
   ds += String(y_pid);
-  ds += ";";
+  ds += ",";
   ds += String(pyro_voltage);
 
 
@@ -55,11 +51,13 @@ void logData() { // dataLogTemp --> permanent storage
   filenameStr.toCharArray(filename, sizeof(filename));
 
   File dataFile = SD.open(filename, FILE_WRITE);
-  
-  if (dataFile) {
-    dataFile.println(ds);
-    dataFile.close();
-  } else {
-    Serial.println(F("ERROR: opening thrust.txt"));
+
+  if (armed) {
+    if (dataFile) {
+      dataFile.println(ds);
+      dataFile.close();
+    } else {
+      Serial.println(F("ERROR: opening thrust.txt"));
+    }
   }
 }
