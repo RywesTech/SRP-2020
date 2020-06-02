@@ -1,3 +1,13 @@
+/*
+TODO:
+- calculate acceleration properly
+- calculate drag force properly
+- save a specific vehicle to a file
+- add option to just lock vehicle in place and simulate only PID
+- "VORTEX" landing sim???
+*/
+
+
 import peasy.*;
 import controlP5.*;
 
@@ -22,7 +32,7 @@ void setup() {
 
   font = loadFont("Exo2-Regular-18.vlw");
 
-  vehicle = loadTable("vehicle.csv", "header");
+  vehicle = loadTable("history.csv", "header");
   int row = vehicle.getRowCount() - 1;
 
   mass = vehicle.getFloat(row, "mass");
@@ -389,7 +399,7 @@ void saveParams() {
   newRow.setFloat("drop_alt", drop_alt);
   newRow.setFloat("ign_alt", ign_alt);
 
-  saveTable(vehicle, "data/vehicle.csv");
+  saveTable(vehicle, "data/history.csv");
 }
 
 void reset() {

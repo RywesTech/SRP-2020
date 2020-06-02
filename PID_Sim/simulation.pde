@@ -1,12 +1,10 @@
-
-
 // Simulation params:
-int sim_length = 8000; // simulate the first 5 seconds of flight
+int sim_length = 8000; // simulate the first 8 seconds of flight
 
 float max_TVC_angle = 0.0872665; // 5º deg in radians
 float[] TVC = new float[3]; // TVC ang_position (rad)
 
-float setpoint[] = {0.0, 0.0, 0.0};
+float setpoint[] = {0.0, 0.0, 0.0}; // default setpoint is vertical
 float gravity = -9.80665; // m/s^2
 
 String[] columns = {"ms", "current_thrust", 
@@ -62,8 +60,8 @@ void runSim(float ign_alt, float drop_alt) {
   lin_pos[0] = 0.0; //0.3
   lin_pos_prev[0] = 0.0;
   
-  ang_pos[0] = 0.0; //0.3
-  ang_pos_prev[0] = 0.0;
+  ang_pos[0] = 0.1; //0.3
+  ang_pos_prev[0] = 0.1;
   ang_pos[1] = 0.0; //0.02
   ang_pos_prev[1] = 0.0;
 
@@ -161,8 +159,9 @@ void runSim(float ign_alt, float drop_alt) {
     thrust_vector[1] = TVC[1] + ang_pos[1];
     lin_force[0] = current_thrust * sin(thrust_vector[0]);
     lin_force[1] = current_thrust * sin(thrust_vector[1]);
-    lin_force[2] = (((cos(thrust_vector[0]) + cos(thrust_vector[1]))/2) * current_thrust) + (mass * gravity); // so this really just isn't correct but it's the best I've got
+    //lin_force[2] = (((cos(thrust_vector[0]) + cos(thrust_vector[1]))/2) * current_thrust) + (mass * gravity); // so this really just isn't correct but it's the best I've got
     //lin_force[2] = (sqrt((sq(cos(thrust_vector[0])) + sq(cos(thrust_vector[1]))) ) * current_thrust) + (mass * gravity);
+    lin_force[2] = 
     
     lin_accel[0] = lin_force[0] / mass;
     lin_accel[1] = lin_force[1] / mass;
