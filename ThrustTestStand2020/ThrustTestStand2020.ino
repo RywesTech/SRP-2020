@@ -1,3 +1,5 @@
+// This uses the old HX711 library
+
 #include <SPI.h>
 #include <SD.h>
 #include "HX711.h"
